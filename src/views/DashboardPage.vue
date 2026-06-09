@@ -5,12 +5,16 @@
       <div class="topbar-left">
         <h2 class="topbar-title">工单管理</h2>
         <el-tag :type="authStore.isAdmin ? 'danger' : 'info'" size="small">
-          {{ authStore.user?.username }}（{{ authStore.isAdmin ? '管理员' : '普通用户' }}）
+          {{ authStore.user?.username }}（{{
+            authStore.isAdmin ? "管理员" : "普通用户"
+          }}）
         </el-tag>
       </div>
       <div class="topbar-right">
         <el-button :icon="Refresh" @click="handleRefresh">刷新</el-button>
-        <el-button type="danger" plain @click="handleLogout">退出登录</el-button>
+        <el-button type="danger" plain @click="handleLogout"
+          >退出登录</el-button
+        >
       </div>
     </header>
 
@@ -36,13 +40,30 @@
           <el-table-column label="Overtime" width="120" align="center">
             <template #default="{ row }">
               <el-tag :type="row.overtime ? 'danger' : 'success'" size="small">
-                {{ row.overtime ? 'Yes' : 'No' }}
+                {{ row.overtime ? "Yes" : "No" }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="hours" label="Hours" width="100" align="center" sortable />
-          <el-table-column prop="created_at" label="Created At" width="180" align="center" />
-          <el-table-column v-if="authStore.isAdmin" label="操作" width="100" align="center" fixed="right">
+          <el-table-column
+            prop="hours"
+            label="Hours"
+            width="100"
+            align="center"
+            sortable
+          />
+          <el-table-column
+            prop="created_at"
+            label="Created At"
+            width="180"
+            align="center"
+          />
+          <el-table-column
+            v-if="authStore.isAdmin"
+            label="操作"
+            width="100"
+            align="center"
+            fixed="right"
+          >
             <template #default="{ row }">
               <el-popconfirm
                 title="确认删除该工单？"
@@ -94,7 +115,10 @@
         </template>
 
         <div v-loading="chartLoading" class="chart-wrapper">
-          <div v-if="!chartLoading && chartData.length === 0" class="chart-empty-state">
+          <div
+            v-if="!chartLoading && chartData.length === 0"
+            class="chart-empty-state"
+          >
             <el-empty description="暂无工单数据" :image-size="80" />
           </div>
           <div
@@ -113,179 +137,220 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { Refresh } from '@element-plus/icons-vue'
-import { useAuthStore } from '@/stores/auth'
-import { getOrders, deleteOrder } from '@/api/orders'
-import type { WorkOrder } from '@/types'
-import * as echarts from 'echarts'
+import { ref, onMounted, onUnmounted, nextTick } from "vue";
+import { useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
+import { Refresh } from "@element-plus/icons-vue";
+import { useAuthStore } from "@/stores/auth";
+import { getOrders, deleteOrder } from "@/api/orders";
+import type { WorkOrder } from "@/types";
+import * as echarts from "echarts";
 
-const router = useRouter()
-const authStore = useAuthStore()
+const router = useRouter();
+const authStore = useAuthStore();
 
 // ---- 表格状态 ----
-const tableData = ref<WorkOrder[]>([])
-const tableLoading = ref(false)
-const tablePage = ref(1)
-const tablePageSize = ref(3)
-const tableTotal = ref(0)
+const tableData = ref<WorkOrder[]>([]);
+const tableLoading = ref(false);
+const tablePage = ref(1);
+const tablePageSize = ref(3);
+const tableTotal = ref(0);
 
 // ---- 图表状态 ----
-const chartData = ref<WorkOrder[]>([])
-const chartLoading = ref(false)
-const chartPage = ref(1)
-const chartPageSize = ref(3)
-const chartTotal = ref(0)
+const chartData = ref<WorkOrder[]>([]);
+const chartLoading = ref(false);
+const chartPage = ref(1);
+const chartPageSize = ref(3);
+const chartTotal = ref(0);
 
 // ---- ECharts 实例 ----
-const chartRef = ref<HTMLDivElement>()
-let chart: echarts.ECharts | null = null
+const chartRef = ref<HTMLDivElement>();
+let chart: echarts.ECharts | null = null;
 
 // ---- 聚合 + 渲染 ----
 function aggregateOrders(orders: WorkOrder[]) {
-  const map = new Map<string, number>()
-  orders.forEach(o => map.set(o.project, (map.get(o.project) || 0) + o.hours))
+  const map = new Map<string, number>();
+  orders.forEach((o) =>
+    map.set(o.project, (map.get(o.project) || 0) + o.hours),
+  );
   return Array.from(map.entries()).map(([project, hours]) => ({
     project,
     hours: Math.round(hours * 10) / 10,
-  }))
+  }));
 }
 
 function renderChart() {
-  initChart()
-  if (!chart) return
-  const data = aggregateOrders(chartData.value)
-  if (data.length === 0) { chart.clear(); return }
+  initChart();
+  if (!chart) return;
+  const data = aggregateOrders(chartData.value);
+  if (data.length === 0) {
+    chart.clear();
+    return;
+  }
 
-  chart.setOption({
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    grid: { left: '3%', right: '4%', bottom: '3%', top: 40, containLabel: true },
-    xAxis: {
-      type: 'category',
-      data: data.map(d => d.project),
-      axisLabel: { rotate: 0, fontSize: 12, color: '#606266' },
-      boundaryGap: true,
+  chart.setOption(
+    {
+      tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+      grid: {
+        left: "3%",
+        right: "4%",
+        bottom: "3%",
+        top: 40,
+        containLabel: true,
+      },
+      xAxis: {
+        type: "category",
+        data: data.map((d) => d.project),
+        axisLabel: { rotate: 0, fontSize: 12, color: "#606266" },
+        boundaryGap: true,
+      },
+      yAxis: {
+        type: "value",
+        name: "Hours",
+        minInterval: 1,
+        axisLabel: { fontSize: 12, color: "#909399" },
+      },
+      series: [
+        {
+          type: "bar",
+          data: data.map((d) => d.hours),
+          itemStyle: { color: "#1890ff", borderRadius: [4, 4, 0, 0] },
+          barWidth: "50%",
+          label: {
+            show: true,
+            position: "top",
+            fontSize: 12,
+            color: "#303133",
+          },
+          emphasis: { itemStyle: { color: "#40a9ff" } },
+        },
+      ],
     },
-    yAxis: {
-      type: 'value',
-      name: 'Hours',
-      minInterval: 1,
-      axisLabel: { fontSize: 12, color: '#909399' },
-    },
-    series: [{
-      type: 'bar',
-      data: data.map(d => d.hours),
-      itemStyle: { color: '#1890ff', borderRadius: [4, 4, 0, 0] },
-      barWidth: '50%',
-      label: { show: true, position: 'top', fontSize: 12, color: '#303133' },
-      emphasis: { itemStyle: { color: '#40a9ff' } },
-    }],
-  }, true)
-  chart.resize()
+    true,
+  );
+  chart.resize();
 }
 
 // ---- 加载表格数据 ----
 async function loadTableData() {
-  tableLoading.value = true
+  tableLoading.value = true;
   try {
-    const res = await getOrders({ page: tablePage.value, pageSize: tablePageSize.value })
+    const res = await getOrders({
+      page: tablePage.value,
+      pageSize: tablePageSize.value,
+    });
     if (res.code === 0) {
-      tableData.value = res.data.list
-      tableTotal.value = res.data.total
+      tableData.value = res.data.list;
+      tableTotal.value = res.data.total;
     }
   } catch (err: any) {
-    ElMessage.error(err.message || '加载工单失败')
+    ElMessage.error(err.message || "加载工单失败");
   } finally {
-    tableLoading.value = false
+    tableLoading.value = false;
   }
 }
 
 // ---- 加载图表数据 ----
 async function loadChartData() {
-  chartLoading.value = true
+  chartLoading.value = true;
   try {
-    const res = await getOrders({ page: chartPage.value, pageSize: chartPageSize.value })
+    const res = await getOrders({
+      page: chartPage.value,
+      pageSize: chartPageSize.value,
+    });
     if (res.code === 0) {
-      chartData.value = res.data.list
-      chartTotal.value = res.data.total
+      chartData.value = res.data.list;
+      chartTotal.value = res.data.total;
     }
   } catch (err: any) {
-    ElMessage.error(err.message || '加载图表数据失败')
+    ElMessage.error(err.message || "加载图表数据失败");
   } finally {
-    chartLoading.value = false
-    nextTick(() => renderChart())
+    chartLoading.value = false;
+    nextTick(() => renderChart());
   }
 }
 
 // ---- 加载所有 ----
 async function loadAll() {
-  await Promise.all([loadTableData(), loadChartData()])
+  await Promise.all([loadTableData(), loadChartData()]);
 }
 
 // ---- 表格分页 ----
-function handleTablePageChange() { loadTableData() }
-function handleTablePageSizeChange() { tablePage.value = 1; loadTableData() }
+function handleTablePageChange() {
+  loadTableData();
+}
+function handleTablePageSizeChange() {
+  tablePage.value = 1;
+  loadTableData();
+}
 
 // ---- 图表分页 ----
-function handleChartPageChange() { loadChartData() }
-function handleChartPageSizeChange() { chartPage.value = 1; loadChartData() }
+function handleChartPageChange() {
+  loadChartData();
+}
+function handleChartPageSizeChange() {
+  chartPage.value = 1;
+  loadChartData();
+}
 
 // ---- 删除 ----
 async function handleDelete(id: string) {
   try {
-    const res = await deleteOrder(id)
+    const res = await deleteOrder(id);
     if (res.code === 0) {
-      ElMessage.success('删除成功')
-      await loadTableData()
+      ElMessage.success("删除成功");
+      await loadTableData();
       if (tableData.value.length === 0 && tablePage.value > 1) {
-        tablePage.value--
-        await loadTableData()
+        tablePage.value--;
+        await loadTableData();
       }
-      await loadChartData()
+      await loadChartData();
       if (chartData.value.length === 0 && chartPage.value > 1) {
-        chartPage.value--
-        await loadChartData()
+        chartPage.value--;
+        await loadChartData();
       }
     }
   } catch (err: any) {
-    ElMessage.error(err.message || '删除失败')
+    ElMessage.error(err.message || "删除失败");
   }
 }
 
 // ---- 刷新 ----
-function handleRefresh() { loadAll() }
+function handleRefresh() {
+  loadAll();
+}
 
 // ---- 退出 ----
 function handleLogout() {
-  authStore.logout()
-  ElMessage.info('已退出登录')
-  router.push('/login')
+  authStore.logout();
+  ElMessage.info("已退出登录");
+  router.push("/login");
 }
 
 // ---- ECharts resize ----
-function handleResize() { chart?.resize() }
+function handleResize() {
+  chart?.resize();
+}
 
 function initChart() {
   if (chartRef.value && !chart) {
-    chart = echarts.init(chartRef.value)
-    window.addEventListener('resize', handleResize)
+    chart = echarts.init(chartRef.value);
+    window.addEventListener("resize", handleResize);
   }
 }
 
 // ---- 初始化 ----
 onMounted(() => {
-  initChart()
-  loadAll()
-})
+  initChart();
+  loadAll();
+});
 
 // ---- 清理 ----
 onUnmounted(() => {
-  window.removeEventListener('resize', handleResize)
-  chart?.dispose()
-  chart = null
-})
+  window.removeEventListener("resize", handleResize);
+  chart?.dispose();
+  chart = null;
+});
 </script>
 
 <style scoped>
